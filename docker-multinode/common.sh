@@ -86,6 +86,11 @@ kube::multinode::main(){
     ${KUBELET_MOUNT} \
     -v /var/log/containers:/var/log/containers:rw"
 
+  DOCKER_LOG_OPTS="
+    --log-opt max-size=100m \
+    --log-opt max-file=5
+  "
+
   # Paths
   FLANNEL_SUBNET_DIR=${FLANNEL_SUBNET_DIR:-/run/flannel}
 
@@ -127,6 +132,7 @@ kube::multinode::start_etcd() {
 
   # TODO: Remove the 4001 port as it is deprecated
   docker ${BOOTSTRAP_DOCKER_PARAM} run -d \
+    ${DOCKER_LOG_OPTS} \
     --name kube_etcd_$(kube::helpers::small_sha) \
     --restart=${RESTART_POLICY} \
     ${ETCD_NET_PARAM} \
@@ -166,6 +172,7 @@ kube::multinode::start_flannel() {
   rm -f ${FLANNEL_SUBNET_DIR}/subnet.env
 
   docker ${BOOTSTRAP_DOCKER_PARAM} run -d \
+    ${DOCKER_LOG_OPTS} \
     --name kube_flannel_$(kube::helpers::small_sha) \
     --restart=${RESTART_POLICY} \
     --net=host \
@@ -202,6 +209,7 @@ kube::multinode::start_k8s_master() {
   kube::multinode::make_shared_kubelet_dir
 
   docker run -d \
+    ${DOCKER_LOG_OPTS} \
     --net=host \
     --pid=host \
     --privileged \
@@ -230,6 +238,7 @@ kube::multinode::start_k8s_worker() {
 
   # TODO: Use secure port for communication
   docker run -d \
+    ${DOCKER_LOG_OPTS} \
     --net=host \
     --pid=host \
     --privileged \
@@ -253,6 +262,7 @@ kube::multinode::start_k8s_worker_proxy() {
 
   kube::log::status "Launching kube-proxy..."
   docker run -d \
+    ${DOCKER_LOG_OPTS} \
     --net=host \
     --privileged \
     --name kube_proxy_$(kube::helpers::small_sha) \
